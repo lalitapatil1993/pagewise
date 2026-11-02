@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pagewise Books – Online Bookstore</title>
+  <meta name="description" content="Browse, search and buy books online at Pagewise Books.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#catalog">Skip to catalog</a>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="logo" href="#" aria-label="Pagewise Books home">Page<span>wise</span></a>
+
+      <form class="search" role="search" id="search-form">
+        <label class="sr-only" for="search-input">Search books</label>
+        <input id="search-input" type="search" placeholder="Search title or author…" autocomplete="off">
+      </form>
+
+      <button class="btn btn-cart" id="cart-toggle" aria-controls="cart-drawer" aria-expanded="false">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg>
+        <span class="cart-label">Cart</span>
+        <span class="badge" id="cart-count" aria-live="polite">0</span>
+      </button>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="container">
+      <h1>Find your next favourite read</h1>
+      <p>Thousands of stories, ideas and adventures – delivered to your door.</p>
+      <a class="btn btn-primary" href="#catalog">Browse books</a>
+    </div>
+  </section>
+
+  <main id="catalog" class="container">
+    <div class="toolbar">
+      <div class="chips" id="category-chips" role="group" aria-label="Filter by category"></div>
+      <div class="toolbar-right">
+        <label for="sort-select" class="sr-only">Sort books</label>
+        <select id="sort-select">
+          <option value="featured">Featured</option>
+          <option value="price-asc">Price: low to high</option>
+          <option value="price-desc">Price: high to low</option>
+          <option value="rating">Top rated</option>
+          <option value="title">Title A–Z</option>
+        </select>
+      </div>
+    </div>
+
+    <p class="result-count" id="result-count" aria-live="polite"></p>
+    <div class="grid" id="book-grid"></div>
+    <p class="empty" id="empty-state" hidden>No books match your search. Try a different keyword or category.</p>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>&copy; <span id="year"></span> Pagewise Books. Demo storefront – no real payments are processed.</p>
+    </div>
+  </footer>
+
+  <!-- Cart drawer -->
+  <div class="overlay" id="overlay" hidden></div>
+  <aside class="drawer" id="cart-drawer" aria-label="Shopping cart" aria-hidden="true">
+    <div class="drawer-head">
+      <h2>Your cart</h2>
+      <button class="icon-btn" id="cart-close" aria-label="Close cart">&times;</button>
+    </div>
+    <ul class="cart-list" id="cart-list"></ul>
+    <p class="empty" id="cart-empty">Your cart is empty.</p>
+    <div class="drawer-foot">
+      <div class="row"><span>Subtotal</span><strong id="cart-subtotal">$0.00</strong></div>
+      <div class="row muted"><span>Shipping</span><span id="cart-shipping">$0.00</span></div>
+      <div class="row total"><span>Total</span><strong id="cart-total">$0.00</strong></div>
+      <button class="btn btn-primary btn-block" id="checkout-btn" disabled>Checkout</button>
+      <button class="btn btn-link btn-block" id="clear-cart" hidden>Clear cart</button>
+    </div>
+  </aside>
+
+  <!-- Book details dialog -->
+  <dialog id="book-dialog" aria-labelledby="dlg-title">
+    <button class="icon-btn dlg-close" id="dlg-close" aria-label="Close details">&times;</button>
+    <div class="dlg-body" id="dlg-body"></div>
+  </dialog>
+
+  <!-- Checkout dialog -->
+  <dialog id="checkout-dialog" aria-labelledby="co-title">
+    <button class="icon-btn dlg-close" id="co-close" aria-label="Close checkout">&times;</button>
+    <form id="checkout-form" class="co-form" novalidate>
+      <h2 id="co-title">Checkout</h2>
+      <label>Full name
+        <input name="name" required autocomplete="name">
+        <small class="err" data-for="name"></small>
+      </label>
+      <label>Email
+        <input name="email" type="email" required autocomplete="email">
+        <small class="err" data-for="email"></small>
+      </label>
+      <label>Shipping address
+        <textarea name="address" rows="3" required autocomplete="street-address"></textarea>
+        <small class="err" data-for="address"></small>
+      </label>
+      <p class="co-total">Order total: <strong id="co-total"></strong></p>
+      <button class="btn btn-primary btn-block" type="submit">Place order</button>
+    </form>
+    <div class="co-done" id="co-done" hidden>
+      <h2>Thank you!</h2>
+      <p>Your order <strong id="co-order"></strong> has been placed. A confirmation was sent to <span id="co-mail"></span>.</p>
+      <button class="btn btn-primary" id="co-ok">Continue shopping</button>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="books.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
