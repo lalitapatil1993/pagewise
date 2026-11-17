@@ -76,9 +76,24 @@ button { cursor: pointer; }
   color: #fff; font-size: .75rem; display: inline-grid; place-items: center;
 }
 
+.header-actions { display: flex; gap: .5rem; }
+
+/* Wishlist */
+.wish-btn { border: 1px solid var(--border); background: var(--surface); color: var(--primary); border-radius: 999px; line-height: 1; }
+.wish-btn .w-on, .wish-btn[aria-pressed="true"] .w-off { display: none; }
+.wish-btn[aria-pressed="true"] .w-on { display: inline; }
+.wish-btn:hover { background: #fdeeea; }
+.wish-icon { position: absolute; top: .6rem; right: .6rem; width: 36px; height: 36px; font-size: 1.2rem; box-shadow: var(--shadow); }
+.wish-text { padding: .6rem 1.1rem; font-weight: 600; margin-left: .5rem; border-radius: 8px; }
+.card { position: relative; }
+
 /* Hero */
 .hero {
-  background: linear-gradient(135deg, #2b3a67, #5b2a86); color: #fff;
+  background:
+    linear-gradient(rgba(20, 20, 40, .6), rgba(20, 20, 40, .6)),
+    url("hero.jpg") center / cover no-repeat,
+    linear-gradient(135deg, #2b3a67, #5b2a86);
+  color: #fff;
   padding: clamp(2rem, 6vw, 4.5rem) 0; text-align: center;
 }
 .hero h1 { margin: 0 0 .5rem; font-size: clamp(1.7rem, 5vw, 3rem); line-height: 1.15; }

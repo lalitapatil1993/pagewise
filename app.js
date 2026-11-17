@@ -2,18 +2,20 @@
   'use strict';
 
   const $ = (sel) => document.querySelector(sel);
-  const money = (n) => `$${n.toFixed(2)}`;
+  const money = (n) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-  const FREE_SHIPPING_OVER = 50;
-  const SHIPPING_FEE = 4.99;
+  const FREE_SHIPPING_OVER = 4000;
+  const SHIPPING_FEE = 399;
   const STORAGE_KEY = 'pagewise-cart';
+  const WISH_KEY = 'pagewise-wishlist';
 
   const state = {
     query: '',
     category: 'All',
     sort: 'featured',
-    cart: loadCart() // { [bookId]: qty }
+    cart: loadCart(), // { [bookId]: qty }
+    wish: loadWish() // [bookId, ...]
   };
 
   const el = {
@@ -22,6 +24,8 @@
     drawer: $('#cart-drawer'), overlay: $('#overlay'), cartToggle: $('#cart-toggle'), cartCount: $('#cart-count'),
     cartList: $('#cart-list'), cartEmpty: $('#cart-empty'), subtotal: $('#cart-subtotal'),
     shipping: $('#cart-shipping'), total: $('#cart-total'), checkoutBtn: $('#checkout-btn'), clear: $('#clear-cart'),
+    wishDrawer: $('#wish-drawer'), wishToggle: $('#wish-toggle'), wishCount: $('#wish-count'),
+    wishList: $('#wish-list'), wishEmpty: $('#wish-empty'), wishClear: $('#clear-wish'),
     bookDlg: $('#book-dialog'), bookBody: $('#dlg-body'),
     coDlg: $('#checkout-dialog'), coForm: $('#checkout-form'), coDone: $('#co-done'),
     toast: $('#toast')
@@ -33,6 +37,16 @@
   }
   function saveCart() {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.cart)); } catch { /* storage unavailable */ }
+  }
+
+  function loadWish() {
+    try {
+      const ids = JSON.parse(localStorage.getItem(WISH_KEY));
+      return Array.isArray(ids) ? ids.filter((id) => BOOKS.some((b) => b.id === id)) : [];
+    } catch { return []; }
+  }
+  function saveWish() {
+    try { localStorage.setItem(WISH_KEY, JSON.stringify(state.wish)); } catch { /* storage unavailable */ }
   }
 
   /* ---------- Catalog ---------- */
@@ -70,6 +84,7 @@
     el.grid.innerHTML = list.map((b) => `
       <article class="card">
         <button class="cover-btn" data-details="${b.id}" aria-label="View details for ${esc(b.title)}">${cover(b)}</button>
+        ${wishBtn(b, 'wish-icon')}
         <div class="card-body">
           <h3 class="card-title">${esc(b.title)}</h3>
           <p class="card-author">${esc(b.author)}</p>
@@ -82,6 +97,56 @@
       </article>`).join('');
     el.empty.hidden = list.length > 0;
     el.count.textContent = `${list.length} book${list.length === 1 ? '' : 's'} found`;
+  }
+
+  /* ---------- Wishlist ---------- */
+  const isWished = (id) => state.wish.includes(Number(id));
+
+  function wishBtn(b, cls, label = '') {
+    const on = isWished(b.id);
+    return `<button class="wish-btn ${cls}" data-wish="${b.id}" aria-pressed="${on}" aria-label="Add ${esc(b.title)} to wishlist">` +
+      `<span class="w-off" aria-hidden="true">♡</span><span class="w-on" aria-hidden="true">♥</span>${label}</button>`;
+  }
+
+  function renderWish() {
+    const books = state.wish.map(findBook).filter(Boolean);
+    el.wishCount.textContent = books.length;
+    el.wishEmpty.hidden = books.length > 0;
+    el.wishClear.hidden = books.length === 0;
+    el.wishList.innerHTML = books.map((b) => `
+      <li class="cart-item">
+        ${cover(b, 'mini-cover')}
+        <div>
+          <h3>${esc(b.title)}</h3>
+          <p>${esc(b.author)}</p>
+          <button class="btn btn-primary" data-add="${b.id}">Add to cart</button>
+        </div>
+        <div class="item-right">
+          <strong>${money(b.price)}</strong>
+          <button class="remove" data-wish="${b.id}">Remove</button>
+        </div>
+      </li>`).join('');
+    // Sync heart buttons in the grid / details dialog
+    document.querySelectorAll('.wish-btn[data-wish]').forEach((btn) =>
+      btn.setAttribute('aria-pressed', isWished(btn.dataset.wish)));
+    saveWish();
+  }
+
+  function toggleWish(id) {
+    id = Number(id);
+    const adding = !isWished(id);
+    state.wish = adding ? [...state.wish, id] : state.wish.filter((w) => w !== id);
+    renderWish();
+    toast(adding ? `Saved “${findBook(id).title}” to wishlist` : `Removed “${findBook(id).title}” from wishlist`);
+  }
+
+  function setWishOpen(open) {
+    if (open) lastFocus = document.activeElement;
+    el.wishDrawer.classList.toggle('open', open);
+    el.wishDrawer.setAttribute('aria-hidden', String(!open));
+    el.overlay.hidden = !open;
+    el.wishToggle.setAttribute('aria-expanded', String(open));
+    if (open) $('#wish-close').focus(); else if (lastFocus) lastFocus.focus();
   }
 
   /* ---------- Cart ---------- */
@@ -170,6 +235,7 @@
         <p>${esc(b.description)}</p>
         <span class="price">${money(b.price)}</span>
         <button class="btn btn-primary" data-add="${b.id}">Add to cart</button>
+        ${wishBtn(b, 'wish-text', ' Wishlist')}
       </div>`;
     el.bookDlg.showModal();
   }
@@ -238,9 +304,10 @@
 
   // Delegated clicks for add / details / cart item actions
   document.addEventListener('click', (e) => {
-    const t = e.target.closest('[data-add],[data-details],[data-inc],[data-dec],[data-remove]');
+    const t = e.target.closest('[data-add],[data-details],[data-inc],[data-dec],[data-remove],[data-wish]');
     if (!t) return;
-    if (t.dataset.add) addToCart(t.dataset.add);
+    if (t.dataset.wish) toggleWish(t.dataset.wish);
+    else if (t.dataset.add) addToCart(t.dataset.add);
     else if (t.dataset.details) openDetails(t.dataset.details);
     else if (t.dataset.inc) changeQty(t.dataset.inc, 1);
     else if (t.dataset.dec) changeQty(t.dataset.dec, -1);
@@ -249,10 +316,19 @@
 
   el.cartToggle.addEventListener('click', openCart);
   $('#cart-close').addEventListener('click', closeCart);
-  el.overlay.addEventListener('click', closeCart);
+  el.overlay.addEventListener('click', () => {
+    if (el.wishDrawer.classList.contains('open')) setWishOpen(false); else closeCart();
+  });
   el.clear.addEventListener('click', () => { state.cart = {}; renderCart(); });
   el.checkoutBtn.addEventListener('click', openCheckout);
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && el.drawer.classList.contains('open')) closeCart(); });
+  el.wishToggle.addEventListener('click', () => setWishOpen(true));
+  $('#wish-close').addEventListener('click', () => setWishOpen(false));
+  el.wishClear.addEventListener('click', () => { state.wish = []; renderWish(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (el.drawer.classList.contains('open')) closeCart();
+    else if (el.wishDrawer.classList.contains('open')) setWishOpen(false);
+  });
 
   $('#dlg-close').addEventListener('click', () => el.bookDlg.close());
   $('#co-close').addEventListener('click', () => el.coDlg.close());
@@ -265,4 +341,5 @@
   renderChips();
   renderGrid();
   renderCart();
+  renderWish();
 })();
