@@ -2,7 +2,7 @@ export default function Header({ query, onQuery, wishCount, cartCount, onOpenWis
   return (
     <header className="site-header">
       <div className="container header-inner">
-        <a className="logo" href="#" aria-label="Pagewise Books home">Page<span>wise</span></a>
+        <a className="logo" href="#" aria-label="Booknest Books home">Book<span>nest</span></a>
 
         <form className="search" role="search" onSubmit={(e) => e.preventDefault()}>
           <label className="sr-only" htmlFor="search-input">Search books</label>

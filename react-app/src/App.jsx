@@ -77,7 +77,7 @@ export default function App() {
 
       <footer className="site-footer">
         <div className="container">
-          <p>&copy; {new Date().getFullYear()} Pagewise Books. Demo storefront – no real payments are processed.</p>
+          <p>&copy; {new Date().getFullYear()} Booknest Books. Demo storefront – no real payments are processed.</p>
         </div>
       </footer>
 

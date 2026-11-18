@@ -3,8 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Pagewise Books – Online Bookstore</title>
-  <meta name="description" content="Browse, search and buy books online at Pagewise Books.">
+  <title>Booknest Books – Online Bookstore</title>
+  <meta name="description" content="Browse live book listings with real covers, search, wishlist and checkout at Booknest Books.">
+  <script>
+    // Apply saved/preferred theme before first paint to avoid a flash
+    (function () {
+      try {
+        var t = localStorage.getItem('pagewise-theme') ||
+          (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.dataset.theme = t;
+      } catch (e) { /* ignore */ }
+    })();
+  </script>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -12,14 +22,22 @@
 
   <header class="site-header">
     <div class="container header-inner">
-      <a class="logo" href="#" aria-label="Pagewise Books home">Page<span>wise</span></a>
+      <a class="logo" href="#" aria-label="Booknest Books home">Book<span>nest</span></a>
 
       <form class="search" role="search" id="search-form">
         <label class="sr-only" for="search-input">Search books</label>
-        <input id="search-input" type="search" placeholder="Search title or author…" autocomplete="off">
+        <input id="search-input" type="search" placeholder="Search millions of books by title or author…  ( / )" autocomplete="off">
+        <span class="search-spinner" id="search-spinner" hidden aria-hidden="true"></span>
       </form>
 
       <div class="header-actions">
+        <button class="btn btn-cart icon-only" id="theme-toggle" aria-label="Switch to dark mode" title="Toggle dark mode">
+          <span aria-hidden="true" id="theme-icon">☾</span>
+        </button>
+        <button class="btn btn-cart" id="orders-toggle" title="Your past orders">
+          <span aria-hidden="true">🧾</span>
+          <span class="cart-label">Orders</span>
+        </button>
         <button class="btn btn-cart" id="wish-toggle" aria-controls="wish-drawer" aria-expanded="false">
           <span aria-hidden="true">♥</span>
           <span class="cart-label">Wishlist</span>
@@ -37,8 +55,16 @@
   <section class="hero">
     <div class="container">
       <h1>Find your next favourite read</h1>
-      <p>Thousands of stories, ideas and adventures – delivered to your door.</p>
-      <a class="btn btn-primary" href="#catalog">Browse books</a>
+      <p>Live listings from millions of real books, with real covers – delivered to your door.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#catalog">Browse books</a>
+        <button class="btn btn-ghost" id="surprise-btn" type="button">🎲 Surprise me</button>
+      </div>
+
+      <div class="trending" id="trending" hidden>
+        <h2 class="trending-title">🔥 Trending this week</h2>
+        <div class="trending-row" id="trending-row"></div>
+      </div>
     </div>
   </section>
 
@@ -46,25 +72,61 @@
     <div class="toolbar">
       <div class="chips" id="category-chips" role="group" aria-label="Filter by category"></div>
       <div class="toolbar-right">
+        <div class="view-toggle" role="group" aria-label="Layout">
+          <button class="icon-btn small" id="view-grid" aria-pressed="true" aria-label="Grid view" title="Grid view">▦</button>
+          <button class="icon-btn small" id="view-list" aria-pressed="false" aria-label="List view" title="List view">☰</button>
+        </div>
         <label for="sort-select" class="sr-only">Sort books</label>
         <select id="sort-select">
-          <option value="featured">Featured</option>
+          <option value="popular">Most popular</option>
+          <option value="rating">Top rated</option>
+          <option value="new">Newest</option>
           <option value="price-asc">Price: low to high</option>
           <option value="price-desc">Price: high to low</option>
-          <option value="rating">Top rated</option>
           <option value="title">Title A–Z</option>
         </select>
       </div>
     </div>
 
+    <div class="filters">
+      <label class="filter">
+        <span>Max price: <strong id="price-out">₹3,500</strong></span>
+        <input type="range" id="price-range" min="300" max="3500" step="100" value="3500">
+      </label>
+      <label class="filter">
+        <span>Min rating</span>
+        <select id="rating-select">
+          <option value="0">Any</option>
+          <option value="3">3★ &amp; up</option>
+          <option value="4">4★ &amp; up</option>
+          <option value="4.5">4.5★ &amp; up</option>
+        </select>
+      </label>
+      <button class="btn btn-link" id="reset-filters" type="button" hidden>Reset filters</button>
+    </div>
+
+    <p class="banner" id="offline-banner" hidden>
+      ⚠ Couldn’t reach the live book service – showing our offline catalog.
+      <button class="btn btn-link" id="retry-btn" type="button">Retry</button>
+    </p>
+
     <p class="result-count" id="result-count" aria-live="polite"></p>
-    <div class="grid" id="book-grid"></div>
-    <p class="empty" id="empty-state" hidden>No books match your search. Try a different keyword or category.</p>
+    <div class="grid" id="book-grid" aria-busy="false"></div>
+    <p class="empty" id="empty-state" hidden>No books match your search. Try a different keyword, category or filter.</p>
+    <div class="load-more-wrap"><button class="btn btn-outline" id="load-more" hidden>Load more books</button></div>
+
+    <section class="recent" id="recent" hidden aria-label="Recently viewed">
+      <div class="recent-head">
+        <h2>Recently viewed</h2>
+        <button class="btn btn-link" id="clear-recent" type="button">Clear</button>
+      </div>
+      <div class="trending-row" id="recent-row"></div>
+    </section>
   </main>
 
   <footer class="site-footer">
     <div class="container">
-      <p>&copy; <span id="year"></span> Pagewise Books. Demo storefront – no real payments are processed.</p>
+      <p>&copy; <span id="year"></span> Booknest Books. Book data and covers from <a href="https://openlibrary.org" target="_blank" rel="noopener">Open Library</a>. Demo storefront – prices are illustrative and no real payments are processed.</p>
     </div>
   </footer>
 
@@ -75,10 +137,21 @@
       <h2>Your cart</h2>
       <button class="icon-btn" id="cart-close" aria-label="Close cart">&times;</button>
     </div>
+    <div class="ship-progress" id="ship-progress" hidden>
+      <p id="ship-text"></p>
+      <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="ship-bar"><span id="ship-fill"></span></div>
+    </div>
     <ul class="cart-list" id="cart-list"></ul>
     <p class="empty" id="cart-empty">Your cart is empty.</p>
     <div class="drawer-foot">
+      <form class="promo" id="promo-form" autocomplete="off">
+        <label class="sr-only" for="promo-input">Promo code</label>
+        <input id="promo-input" placeholder="Promo code (try WELCOME10)" maxlength="20">
+        <button class="btn btn-outline" type="submit">Apply</button>
+      </form>
+      <p class="promo-msg" id="promo-msg" aria-live="polite"></p>
       <div class="row"><span>Subtotal</span><strong id="cart-subtotal">₹0</strong></div>
+      <div class="row discount" id="discount-row" hidden><span>Discount</span><strong id="cart-discount">−₹0</strong></div>
       <div class="row muted"><span>Shipping</span><span id="cart-shipping">₹0</span></div>
       <div class="row total"><span>Total</span><strong id="cart-total">₹0</strong></div>
       <button class="btn btn-primary btn-block" id="checkout-btn" disabled>Checkout</button>
@@ -95,6 +168,7 @@
     <ul class="cart-list" id="wish-list"></ul>
     <p class="empty" id="wish-empty">Your wishlist is empty. Tap the heart on a book to save it.</p>
     <div class="drawer-foot">
+      <button class="btn btn-outline btn-block" id="wish-add-all" hidden>Add all to cart</button>
       <button class="btn btn-link btn-block" id="clear-wish" hidden>Clear wishlist</button>
     </div>
   </aside>
@@ -122,13 +196,31 @@
         <textarea name="address" rows="3" required autocomplete="street-address"></textarea>
         <small class="err" data-for="address"></small>
       </label>
+      <fieldset class="pay">
+        <legend>Payment method</legend>
+        <label class="pay-opt"><input type="radio" name="payment" value="UPI" checked> UPI</label>
+        <label class="pay-opt"><input type="radio" name="payment" value="Card"> Card</label>
+        <label class="pay-opt"><input type="radio" name="payment" value="Cash on delivery"> Cash on delivery</label>
+      </fieldset>
+      <div class="co-summary" id="co-summary"></div>
       <p class="co-total">Order total: <strong id="co-total"></strong></p>
       <button class="btn btn-primary btn-block" type="submit">Place order</button>
     </form>
     <div class="co-done" id="co-done" hidden>
-      <h2>Thank you!</h2>
+      <h2>Thank you! 🎉</h2>
       <p>Your order <strong id="co-order"></strong> has been placed. A confirmation was sent to <span id="co-mail"></span>.</p>
+      <p>Estimated delivery: <strong id="co-eta"></strong></p>
       <button class="btn btn-primary" id="co-ok">Continue shopping</button>
+    </div>
+  </dialog>
+
+  <!-- Orders dialog -->
+  <dialog id="orders-dialog" aria-labelledby="orders-title">
+    <button class="icon-btn dlg-close" id="orders-close" aria-label="Close orders">&times;</button>
+    <div class="orders-body">
+      <h2 id="orders-title">Your orders</h2>
+      <p class="empty" id="orders-empty">No orders yet. Place one and it will show up here.</p>
+      <ul class="orders-list" id="orders-list"></ul>
     </div>
   </dialog>
 

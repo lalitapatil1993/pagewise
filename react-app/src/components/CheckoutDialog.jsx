@@ -20,7 +20,7 @@ function CheckoutContent({ total, onPlaceOrder, onDone }) {
     const next = Object.fromEntries(Object.entries(RULES).map(([f, rule]) => [f, rule(values[f])]));
     setErrors(next);
     if (Object.values(next).some(Boolean)) return;
-    setOrder({ id: `#PW${Date.now().toString().slice(-7)}`, email: values.email });
+    setOrder({ id: `#BN${Date.now().toString().slice(-7)}`, email: values.email });
     onPlaceOrder();
   };
 
