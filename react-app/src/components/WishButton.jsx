@@ -5,7 +5,7 @@ export default function WishButton({ book, active, onToggle, className = '', chi
       className={`wish-btn ${className}`}
       aria-pressed={active}
       aria-label={`Add ${book.title} to wishlist`}
-      onClick={() => onToggle(book.id)}
+      onClick={() => onToggle(book)}
     >
       <span className="w-off" aria-hidden="true">♡</span>
       <span className="w-on" aria-hidden="true">♥</span>

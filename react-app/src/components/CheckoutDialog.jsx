@@ -1,17 +1,19 @@
 import { useState } from 'react';
 import Modal from './Modal.jsx';
-import { money } from '../utils.js';
+import { cartTotals, money } from '../utils.js';
 
 const RULES = {
   name: (v) => (v.trim().length >= 2 ? '' : 'Please enter your full name.'),
   email: (v) => (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? '' : 'Please enter a valid email.'),
   address: (v) => (v.trim().length >= 8 ? '' : 'Please enter your full address.')
 };
+const PAYMENTS = ['UPI', 'Card', 'Cash on delivery'];
 
-function CheckoutContent({ total, onPlaceOrder, onDone }) {
-  const [values, setValues] = useState({ name: '', email: '', address: '' });
+function CheckoutContent({ cart, promo, onPlaceOrder, onDone }) {
+  const [values, setValues] = useState({ name: '', email: '', address: '', payment: 'UPI' });
   const [errors, setErrors] = useState({});
-  const [order, setOrder] = useState(null); // { id, email } once placed
+  const [order, setOrder] = useState(null); // { id, email, eta } once placed
+  const t = cartTotals(cart, promo);
 
   const set = (field) => (e) => setValues((v) => ({ ...v, [field]: e.target.value }));
 
@@ -20,15 +22,16 @@ function CheckoutContent({ total, onPlaceOrder, onDone }) {
     const next = Object.fromEntries(Object.entries(RULES).map(([f, rule]) => [f, rule(values[f])]));
     setErrors(next);
     if (Object.values(next).some(Boolean)) return;
-    setOrder({ id: `#BN${Date.now().toString().slice(-7)}`, email: values.email });
-    onPlaceOrder();
+    const placed = onPlaceOrder({ payment: values.payment, total: t.total });
+    setOrder({ id: placed.id, email: values.email, eta: placed.eta });
   };
 
   if (order) {
     return (
       <div className="co-done">
-        <h2 id="co-title">Thank you!</h2>
+        <h2 id="co-title">Thank you! 🎉</h2>
         <p>Your order <strong>{order.id}</strong> has been placed. A confirmation was sent to <span>{order.email}</span>.</p>
+        <p>Estimated delivery: <strong>{order.eta}</strong></p>
         <button type="button" className="btn btn-primary" onClick={onDone}>Continue shopping</button>
       </div>
     );
@@ -55,16 +58,33 @@ function CheckoutContent({ total, onPlaceOrder, onDone }) {
       {field('name', 'Full name', <input {...common('name')} autoComplete="name" />)}
       {field('email', 'Email', <input {...common('email')} type="email" autoComplete="email" />)}
       {field('address', 'Shipping address', <textarea {...common('address')} rows="3" autoComplete="street-address" />)}
-      <p className="co-total">Order total: <strong>{money(total)}</strong></p>
+      <fieldset className="pay">
+        <legend>Payment method</legend>
+        {PAYMENTS.map((p) => (
+          <label className="pay-opt" key={p}>
+            <input type="radio" name="payment" value={p} checked={values.payment === p} onChange={set('payment')} /> {p}
+          </label>
+        ))}
+      </fieldset>
+      <div className="co-summary">
+        <ul>
+          {Object.values(cart).map(({ book, qty }) => (
+            <li key={book.id}><span>{book.title} × {qty}</span><span>{money(book.price * qty)}</span></li>
+          ))}
+          {t.discount > 0 && <li className="disc"><span>Discount ({promo})</span><span>−{money(t.discount)}</span></li>}
+          <li><span>Shipping</span><span>{t.shipping ? money(t.shipping) : 'Free'}</span></li>
+        </ul>
+      </div>
+      <p className="co-total">Order total: <strong>{money(t.total)}</strong></p>
       <button className="btn btn-primary btn-block" type="submit">Place order</button>
     </form>
   );
 }
 
-export default function CheckoutDialog({ open, total, onClose, onPlaceOrder }) {
+export default function CheckoutDialog({ open, cart, promo, onClose, onPlaceOrder }) {
   return (
     <Modal id="checkout-dialog" open={open} onClose={onClose} labelledBy="co-title">
-      <CheckoutContent total={total} onPlaceOrder={onPlaceOrder} onDone={onClose} />
+      <CheckoutContent cart={cart} promo={promo} onPlaceOrder={onPlaceOrder} onDone={onClose} />
     </Modal>
   );
 }

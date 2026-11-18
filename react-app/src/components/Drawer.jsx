@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 
 // Slide-in side panel. Focus moves to the close button on open and is restored on close.
-export default function Drawer({ id, open, title, closeLabel, onClose, footer, children }) {
+export default function Drawer({ id, open, title, closeLabel, onClose, header, footer, children }) {
   const closeRef = useRef(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose; // always call the latest handler without re-running the effect
@@ -24,6 +24,7 @@ export default function Drawer({ id, open, title, closeLabel, onClose, footer, c
         <h2>{title}</h2>
         <button type="button" ref={closeRef} className="icon-btn" aria-label={closeLabel} onClick={onClose}>&times;</button>
       </div>
+      {header}
       {children}
       <div className="drawer-foot">{footer}</div>
     </aside>
